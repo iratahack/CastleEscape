@@ -15,6 +15,8 @@
         include "defs.asm"
         section code_user
 
+        defc    ID_SOLID_TILE=144
+
         ;
         ; Check for player colliding with solid platforms on
         ; the X axis and if the player is going off the screen
@@ -70,7 +72,7 @@ neg1:
         ld      de, TILEMAP_WIDTH
         add     hl, de
         ld      a, (hl)
-        cp      143
+        cp      ID_SOLID_TILE
         ret     nc                      ; 'nc' if a >= 144
 
         ld      a, c                    ; Restore yPos + ySpeed
@@ -79,7 +81,7 @@ neg1:
         add     hl, de                  ; Next row down
 
         ld      a, (hl)
-        cp      143
+        cp      ID_SOLID_TILE
         ret     nc                      ; 'nc' if a >= 144
 
 checkXDone:
@@ -145,12 +147,12 @@ checkYCol:
         add     hl, de
 
         ld      a, (hl)                 ; Get tile ID
-        cp      144
+        cp      142
         jr      nc, landed              ; 'nc' if a >= 144
 
         inc     hl                      ; Next tile to the right
         ld      a, (hl)                 ; Get tile ID
-        cp      144
+        cp      142
         jr      nc, landed              ; 'nc' if a >= 144
 
         ld      a, b                    ; Restore X pixel offset
@@ -158,7 +160,7 @@ checkYCol:
         jr      z, gravity              ; if not we are done
         inc     hl                      ; Check the tile to the right
         ld      a, (hl)
-        cp      144
+        cp      142
         jr      c, gravity              ; 'c' if a < 144
 
 landed:
@@ -222,12 +224,12 @@ previousYLevel:
         addhl                           ; Add X byte offset to tile map Y index
 
         ld      a, (hl)                 ; Get tile ID
-        cp      144
+        cp      ID_SOLID_TILE
         ret     nc                      ; 'nc' if a >= 144
 
         inc     hl
         ld      a, (hl)                 ; Get tile ID
-        cp      144
+        cp      ID_SOLID_TILE
         ret     nc                      ; 'nc' if a >= 144
 
         ld      a, b                    ; Restore X pixel offset
@@ -235,7 +237,7 @@ previousYLevel:
         jr      z, prev                 ; if not we are done
         inc     hl                      ; Check the tile to the right
         ld      a, (hl)
-        cp      144
+        cp      ID_SOLID_TILE
         ret     nc                      ; 'nc' if a >= 144
 prev:
         ld      a, (_tileMapY)
