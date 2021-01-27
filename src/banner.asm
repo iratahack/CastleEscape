@@ -4,11 +4,11 @@
 
         public  displayBanner
 
-		include "defs.asm"
+        include "defs.asm"
 
         section code_user
 
-		defc	BANNER_HEIGHT=0x03
+        defc    BANNER_HEIGHT=0x03
 
 		;
 		; Display the in-game banner.
@@ -16,7 +16,7 @@
 displayBanner:
         push    af
         push    bc
-        push	de
+        push    de
         push    hl
 
         ld      hl, bannerData
@@ -44,7 +44,7 @@ xLoop:
         jr      nz, yLoop
 
         pop     hl
-        pop		de
+        pop     de
         pop     bc
         pop     af
         ret     
