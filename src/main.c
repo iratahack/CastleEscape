@@ -7,6 +7,7 @@
 extern const unsigned char tile0[];
 extern const unsigned char tileAttr[];
 extern void attribEdit(unsigned char *tileset, unsigned char *attrib);
+extern  void setupScreen();
 #endif
 
 extern unsigned char keyboardScan(void);
@@ -30,7 +31,7 @@ int main()
         if (key == 'S')
         {
             attribEdit(tile0, tileAttr);
-            setupScreen();
+//            setupScreen();
         }
 #endif
     }

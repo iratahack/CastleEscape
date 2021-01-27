@@ -147,12 +147,12 @@ checkYCol:
         add     hl, de
 
         ld      a, (hl)                 ; Get tile ID
-        cp      142
+        cp      139
         jr      nc, landed              ; 'nc' if a >= 144
 
         inc     hl                      ; Next tile to the right
         ld      a, (hl)                 ; Get tile ID
-        cp      142
+        cp      139
         jr      nc, landed              ; 'nc' if a >= 144
 
         ld      a, b                    ; Restore X pixel offset
@@ -160,7 +160,7 @@ checkYCol:
         jr      z, gravity              ; if not we are done
         inc     hl                      ; Check the tile to the right
         ld      a, (hl)
-        cp      142
+        cp      139
         jr      c, gravity              ; 'c' if a < 144
 
 landed:
