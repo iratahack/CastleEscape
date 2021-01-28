@@ -3,7 +3,7 @@
         extern  _xSpeed
         extern  _ySpeed
         extern  _currentTileMap
-        extern  setupScreen
+        extern  _setupScreen
         extern  _tileMapX
         extern  _tileMapY
         extern  _jumping
@@ -111,7 +111,7 @@ nextXLevel:
         xor     a
 changeXLevel:
         ld      (_xPos), a
-        call    setupScreen
+        call    _setupScreen
         ret     
 
         ;
@@ -254,5 +254,5 @@ nextYLevel:
         ld      a, 24
 changeYLevel:
         ld      (_yPos), a
-        call    setupScreen
+        call    _setupScreen
         ret     

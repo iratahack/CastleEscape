@@ -19,7 +19,7 @@
         extern  updateEggImage
         extern  displayBanner
 
-        public  setupScreen
+        public  _setupScreen
 
         include "defs.asm"
 
@@ -28,7 +28,7 @@
         ;
         ; Display the current level and any uncollected items.
         ;
-setupScreen:
+_setupScreen:
         pushall 
 
         ld      l, INK_WHITE|PAPER_BLACK
