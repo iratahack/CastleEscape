@@ -2,7 +2,7 @@
 #include <intrinsic.h>
 #include <arch/zx.h>
 
-//#define ATTRIB_EDIT
+#define ATTRIB_EDIT
 #ifdef ATTRIB_EDIT
 extern const unsigned char tile0[];
 extern const unsigned char tileAttr[];
@@ -31,7 +31,7 @@ int main()
         if (key == 'S')
         {
             attribEdit(tile0, tileAttr);
-//            setupScreen();
+            setupScreen();
         }
 #endif
     }

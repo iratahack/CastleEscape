@@ -1,6 +1,5 @@
 #include <arch/zx.h>
 
-#if 0
 extern unsigned char keyboardScan(void)
 __z88dk_fastcall;
 extern void cls(char attr)
@@ -150,7 +149,8 @@ void loadAttrib(unsigned char *src)
     {
         for (x = 0; x < TILE_WIDTH; x++)
         {
-            attr[(y * 32) + x] = *src++;
+            attr[(y * 32) + x] = *src & 0xc7;
+            src++;
         }
     }
 }
@@ -241,7 +241,7 @@ void attribEdit(unsigned char *tileset, unsigned char *attrib)
     /*
      * Copy the attributes to spare memory so they can be dumped.
      */
-    saveAttrib((unsigned char*) 0xc000);
+    saveAttrib((unsigned char*) 0xb000);
 
     /*
      * Copy the attributes back to their original location so
@@ -249,4 +249,3 @@ void attribEdit(unsigned char *tileset, unsigned char *attrib)
      */
     saveAttrib(attrib);
 }
-#endif
