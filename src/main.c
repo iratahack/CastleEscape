@@ -2,11 +2,13 @@
 #include <intrinsic.h>
 #include <arch/zx.h>
 
-//#define ATTRIB_EDIT
+#define ATTRIB_EDIT
 #ifdef ATTRIB_EDIT
 extern const unsigned char tile0[];
 extern const unsigned char tileAttr[];
 extern void attribEdit(unsigned char *tileset, unsigned char *attrib);
+extern  void setupScreen()
+__z88dk_fastcall;
 #endif
 
 extern unsigned char keyboardScan(void);

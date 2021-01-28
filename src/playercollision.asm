@@ -3,7 +3,7 @@
         extern  _xSpeed
         extern  _ySpeed
         extern  _currentTileMap
-        extern  setupScreen
+        extern  _setupScreen
         extern  _tileMapX
         extern  _tileMapY
         extern  _jumping
@@ -15,6 +15,7 @@
         include "defs.asm"
         section code_user
 
+        defc    ID_SOLID_TILE=139
         ;
         ; Check for player colliding with solid platforms on
         ; the X axis and if the player is going off the screen
@@ -62,15 +63,15 @@ neg1:
 
         ld      de, (_currentTileMap)
         add     hl, de
-        ;		ld		a,(hl)
-        ;		cp		143
-        ;		ret		nc						                        ; 'nc' if a >= 144
+        ld      a, (hl)
+        cp      ID_SOLID_TILE
+        ret     nc                      ; 'nc' if a >= 144
 
         ; Check the bottom half of the sprite
         ld      de, TILEMAP_WIDTH
         add     hl, de
         ld      a, (hl)
-        cp      143
+        cp      ID_SOLID_TILE
         ret     nc                      ; 'nc' if a >= 144
 
         ld      a, c                    ; Restore yPos + ySpeed
@@ -79,7 +80,7 @@ neg1:
         add     hl, de                  ; Next row down
 
         ld      a, (hl)
-        cp      143
+        cp      ID_SOLID_TILE
         ret     nc                      ; 'nc' if a >= 144
 
 checkXDone:
@@ -109,7 +110,7 @@ nextXLevel:
         xor     a
 changeXLevel:
         ld      (_xPos), a
-        call    setupScreen
+        call    _setupScreen
         ret     
 
         ;
@@ -145,12 +146,12 @@ checkYCol:
         add     hl, de
 
         ld      a, (hl)                 ; Get tile ID
-        cp      144
+        cp      ID_SOLID_TILE
         jr      nc, landed              ; 'nc' if a >= 144
 
         inc     hl                      ; Next tile to the right
         ld      a, (hl)                 ; Get tile ID
-        cp      144
+        cp      ID_SOLID_TILE
         jr      nc, landed              ; 'nc' if a >= 144
 
         ld      a, b                    ; Restore X pixel offset
@@ -158,7 +159,7 @@ checkYCol:
         jr      z, gravity              ; if not we are done
         inc     hl                      ; Check the tile to the right
         ld      a, (hl)
-        cp      144
+        cp      ID_SOLID_TILE
         jr      c, gravity              ; 'c' if a < 144
 
 landed:
@@ -199,6 +200,44 @@ moveUp:
         dec     a
         cp      24
         jr      c, previousYLevel       ; 'c' if 'a' < 24
+
+        add     -24                     ; Subtract the delta between the screen offset and the level offset
+        and     %11111000               ; Remove the pixel offset within the byte (lower 3 bits)
+        ld      l, a
+        ld      h, 0
+        hlx     TILEMAP_WIDTH/8         ; Divide by 8 to get byte offset and multiply by width of tilemap
+
+        ld      a, (_xPos)              ; Get the X pixel offset
+        ld      b, a                    ; Save pixel offset for later
+        rrca                            ; Divide by 8 to get the byte offset
+        rrca                            ; Faster to do rrca followed by AND rather than srl
+        rrca    
+        and     %00011111
+        addhl                           ; Add X byte offset to tile map Y index
+
+        ld      de, (_currentTileMap)
+        add     hl, de
+
+        ld      a, (hl)                 ; Get tile ID
+        cp      ID_SOLID_TILE
+        ret     nc                      ; 'nc' if a >= 144
+
+        inc     hl                      ; Next tile to the right
+        ld      a, (hl)                 ; Get tile ID
+        cp      ID_SOLID_TILE
+        ret     nc                      ; 'nc' if a >= 144
+
+        ld      a, b                    ; Restore X pixel offset
+        and     %00000111               ; Check if any of the lower 3 bits are set
+        jr      z, up                   ; if not we are done
+        inc     hl                      ; Check the tile to the right
+        ld      a, (hl)
+        cp      ID_SOLID_TILE
+        ret     nc                      ; 'nc' if a >= 144
+
+up:
+        ld      a, (_yPos)
+        dec     a
         ld      (_yPos), a
         ret     
 
@@ -252,5 +291,5 @@ nextYLevel:
         ld      a, 24
 changeYLevel:
         ld      (_yPos), a
-        call    setupScreen
+        call    _setupScreen
         ret     

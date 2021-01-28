@@ -37,7 +37,7 @@
         extern  displayHeartCount
         extern  heartCollision
         extern  decrementEggs
-        extern  setupScreen
+        extern  _setupScreen
         extern  AFXINIT
         extern  AFXPLAY
         extern  AFXFRAME
@@ -190,7 +190,7 @@ newGame:
         ld      a, START_LIVES
         ld      (heartCount), a
 
-        call    setupScreen
+        call    _setupScreen
 
         ld      hl, _spriteBuffer
         push    hl

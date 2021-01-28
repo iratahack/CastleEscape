@@ -30,7 +30,7 @@ all: $(PROJ_NAME).tap
 	
 $(PROJ_NAME).tap : $(OBJECTS) $(PRAGMA_FILE) Makefile
 	 $(LD) $(LDFLAGS) -startup=$(CRT) $(OBJECTS) -o $(PROJ_NAME).bin -create-app
-	 @rm *.i
+	 @rm -f *.i
 	
 .PHONY: clean run dis
 
