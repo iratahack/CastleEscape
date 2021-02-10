@@ -4,7 +4,7 @@
         public  ticks
         section code_user
 
-        include "defs.asm"
+        include "defs.inc"
         defc    VECTOR_TABLE_HIGH=0x80
         defc    VECTOR_TABLE=(VECTOR_TABLE_HIGH<<8)
         defc    JUMP_ADDR_BYTE=0x81

@@ -7,17 +7,17 @@
         extern  _tile0
         extern  setAttr
         extern  clearAttr
-        extern  clearChar
 
         public  _initItems
-        public  displayItemAttr
         public  setCurrentItemTable
         public  displayItems
         public  checkItemCollision
         public  displayTile
         public  setTileAttr
+        public  removeItem
+        public  displayItems_pixel
 
-        include "defs.asm"
+        include "defs.inc"
 
         defc    ITEM_WIDTH=0x08
         defc    ITEM_HEIGHT=0x08
@@ -39,14 +39,13 @@ _initItems:
         ;
         ; Save parameters passed in registers
         ;
-        ld      (itemID), a
-        ld      (currentItem), de
+        ld      (itemID+1), a
         ld      (currentItemTable), hl
 
         ;
         ; Build a stack frame for our variables
         ;
-        ld      (tempSP), sp
+        ld      (tempSP+1), sp
         ld      ix, -SIZEOF_vars
         add     ix, sp
         ld      sp, ix
@@ -59,57 +58,56 @@ _initItems:
 
         ld      hl, _levels
 levelYLoop:
-        ld      (currentLevel), hl
         ld      (ix+levelX), MAX_LEVEL_X
 
 levelXLoop:
+        push    hl
         ld      hl, (currentItemTable)
-        ld      de, (currentItem)
         ld      (hl), e
         inc     hl
         ld      (hl), d
         inc     hl
         ld      (currentItemTable), hl
+        pop     hl
 
-        ld      hl, (currentLevel)
+        push    hl                      ; Save level pointer
+
         ld      (ix+tileY), 3
         ld      c, LEVEL_HEIGHT
-
 tileYLoop:
         ld      (ix+tileX), 0
         ld      b, SCREEN_WIDTH
-
 tileXLoop:
         ld      a, (hl)                 ; Get tile ID
-itemID  equ     $+1
-        cp      0x00
+itemID:
+        cp      -1
         call    z, addItem
         inc     hl
         inc     (ix+tileX)
         djnz    tileXLoop
 
         ; Next row in the tilemap
-        ld      de, SCREEN_WIDTH*MAX_LEVEL_X-SCREEN_WIDTH
-        add     hl, de
+        push    bc
+        ld      bc, SCREEN_WIDTH*MAX_LEVEL_X-SCREEN_WIDTH
+        add     hl, bc
+        pop     bc
 
         inc     (ix+tileY)
         dec     c
         jr      nz, tileYLoop
 
+        pop     hl                      ; Restore level pointer
+
         ;
         ; Move the current level pointer to the next level to the right
         ;
-        ld      hl, (currentLevel)
-        ld      de, SCREEN_WIDTH
-        add     hl, de
-        ld      (currentLevel), hl
+        ld      bc, SCREEN_WIDTH
+        add     hl, bc
 
-        ld      de, (currentItem)
         ; Flags, 0xff = end of list
         ld      a, 0xff
         ld      (de), a
         inc     de
-        ld      (currentItem), de
 
         ;
         ; Decrement X counter and loop if not zero
@@ -120,12 +118,10 @@ itemID  equ     $+1
         ;
         ; Move the current level pointer to the next level down
         ;
-        ld      hl, (currentLevel)
-        ld      de, -SCREEN_WIDTH*MAX_LEVEL_X
-        add     hl, de
-        ld      de, SCREEN_WIDTH*MAX_LEVEL_X*LEVEL_HEIGHT
-        add     hl, de
-        ld      (currentLevel), hl
+        ld      bc, -SCREEN_WIDTH*MAX_LEVEL_X
+        add     hl, bc
+        ld      bc, SCREEN_WIDTH*MAX_LEVEL_X*LEVEL_HEIGHT
+        add     hl, bc
 
         ;
         ; Decrement Y counter and loop if not zero
@@ -136,8 +132,8 @@ itemID  equ     $+1
         ;
         ; Restore the stack frame
         ;
-tempSP  equ     $+1
-        ld      sp, 0x0000
+tempSP:
+        ld      sp, -1
 
         popall  
         ret     
@@ -146,8 +142,6 @@ tempSP  equ     $+1
         ; Add a coin to the coin table
         ;
 addItem:
-        ld      de, (currentItem)
-
         ; Flags, Bit0 = visible
         ld      a, 1
         ld      (de), a
@@ -155,11 +149,19 @@ addItem:
 
         ; X screen position
         ld      a, (ix+tileX)
+        rlca                            ; x2
+        rlca                            ; x4
+        rlca                            ; x8
+        and     %11111000
         ld      (de), a
         inc     de
 
         ; Y screen position
         ld      a, (ix+tileY)
+        rlca                            ; x2
+        rlca                            ; x4
+        rlca                            ; x8
+        and     %11111000
         ld      (de), a
         inc     de
 
@@ -169,21 +171,19 @@ addItem:
         ld      (de), a
         inc     de
 
-        ld      (currentItem), de
-
         ret     
 
         ;
         ; Calculate the value of the current item table based
         ; on the values of tileMapX and tileMapY and save it
-        ; in .
+        ; to the memory location pointed to by 'hl'.
         ;
         ; Entry:
         ;		hl - Pointer to current item table variable
         ; 		de - Pointer to item tables
         ;
 setCurrentItemTable:
-        ld      (currItemTab), hl
+        ld      (currItemTab+2), hl
         ld      hl, (_tileMapX)         ; Get tileMapX & tileMapY
         ld      a, h
         ax      MAX_LEVEL_X*SIZEOF_ptr
@@ -197,54 +197,17 @@ setCurrentItemTable:
         ld      e, (hl)
         inc     hl
         ld      d, (hl)
-currItemTab equ $+2
-        ld      (0x0000), de
+currItemTab:
+        ld      (-1), de
         ret     
-
-        ;
-        ; Cycle through the specified item table if the item is
-        ; visible, update the screen with the attribute for the item.
-        ;
-        ; Items themsleves are not displayed here.
-        ;
-        ; Entry:
-        ;		hl - Pointer to the current item table
-        ;		a  - ID of the item
-        ;
-displayItemAttr:
-        ld      (itemID2), a
-nextItem:
-        ld      a, (hl)
-        cp      0xff
-        ret     z
-
-        or      a
-        jr      z, notVisible
-
-        push    hl
-
-        inc     hl
-        ld      c, (hl)                 ; Item X position
-        inc     hl
-        ld      b, (hl)                 ; Item Y position
-
-itemID2 equ     $+1
-        ld      a, -1
-
-        call    setTileAttr
-
-        pop     hl
-notVisible:
-        ld      a, SIZEOF_item
-        addhl   
-        jr      nextItem
 
         ;
         ; Set the attribute for the tile at the specified location
         ;
         ; Entry:
-        ;		bc - y,x screen position
-        ;		a  - Tile ID
+        ;		b - Y location
+        ;		c - X location
+        ;		a - Tile ID of item
         ;
 setTileAttr:
         push    af
@@ -261,6 +224,7 @@ setTileAttr:
         ret     
 
         ;
+        ; Display the specified tile at the specified location.
         ;
         ; Entry:
         ;		b - Y location
@@ -273,32 +237,29 @@ displayTile:
         push    de
         push    hl
 
-        ld      (itemID4), a
+        di      
+        ; Save the current stack pointer
+        ld      (TempSP2+1), sp
+
+        ld      d, a                    ; Save the tile ID
         ; Calculate the screen address
         ld      l, b                    ; Y screen position
         ld      h, 0
         hlx     16
-        ld      de, _screenTab
-        add     hl, de
-        ld      a, (hl)                 ; Screen low byte address
+        ld      sp, _screenTab
+        add     hl, sp
+        ld      sp, hl
+        ld      a, c
+        pop     bc
         add     c                       ; Add X offset
         ld      c, a                    ; Store result in 'c'
-        inc     hl
-        ld      b, (hl)                 ; Screen high byte address
 
-itemID4 equ     $+1
-        ld      l, -1                   ; -1 is over written by the value of 'a' passed in
+        ld      l, d                    ; Tile ID
         ld      h, 0
         hlx     8
         ld      de, _tile0
         add     hl, de
 
-        ; Display the tile. We are going to use the
-        ; stack pointer to load a 16 bit value so
-        ; we need to disable interrupts.
-        di      
-        ; Save the current stack pointer
-        ld      (TempSP2), sp
         ; Point the stack at the tile data
         ld      sp, hl
         ; Point hl at the screen address
@@ -336,8 +297,8 @@ itemID4 equ     $+1
         ld      (hl), b
 
         ; Restore the stack pointer.
-TempSP2 equ     $+1
-        ld      sp, 0x0000
+TempSP2:
+        ld      sp, -1
         ei      
 
         pop     hl
@@ -345,14 +306,19 @@ TempSP2 equ     $+1
         pop     bc
         pop     af
         ret     
+
         ;
+        ; Display the visible items pointed to by hl. Typically
+        ; called when the level changes to display the items
+        ; which have not yet been collected or to display items
+        ; in their new position if they are moving.
         ;
         ; Entry:
-        ;		hl - Pointer to current item table
-        ;		a  - ID of item
+        ;		hl - Pointer to item table
+        ;		a  - Tile ID of item
         ;
 displayItems:
-        ld      (itemID3), a
+        ld      d, a                    ; Save tile ID
 nextItem2:
         ld      a, (hl)                 ; Flags
         cp      0xff
@@ -364,11 +330,20 @@ nextItem2:
         push    hl
 
         inc     hl
-        ld      c, (hl)                 ; Tile x position
+        ld      a, (hl)                 ; Tile x position
+        rrca    
+        rrca    
+        rrca    
+        and     %00011111
+        ld      c, a
         inc     hl
-        ld      b, (hl)                 ; Tile y position
-itemID3 equ     $+1
-        ld      a, -1                   ; Tile ID
+        ld      a, (hl)                 ; Tile y position
+        rrca    
+        rrca    
+        rrca    
+        and     %00011111
+        ld      b, a
+        ld      a, d                    ; Tile ID
         call    displayTile             ; Display tile
         call    setTileAttr
 
@@ -377,6 +352,145 @@ notVisible2:
         ld      a, SIZEOF_item
         addhl   
         jr      nextItem2
+
+        ;
+        ; Clear the visible items pointed to by hl. Typically
+        ; called to remove the items from the screen before
+        ; their position is updating.
+        ;
+        ; Entry:
+        ;		hl - Pointer to item table
+        ;		a  - Tile ID
+        ;
+displayItems_pixel:
+        ld      d, a                    ; Save tile ID
+nextItem3:
+        ld      a, (hl)                 ; Flags
+        cp      0xff
+        ret     z
+
+        cp      0x00                    ; Is the item visible?
+        jr      z, notVisible4
+
+        push    hl
+
+        inc     hl
+        ld      a, (hl)                 ; Item x pixel position
+        rrca    
+        rrca    
+        rrca    
+        and     %00011111
+        ld      c, a
+
+        inc     hl
+        ld      b, (hl)                 ; Tile y pixel position
+
+        push    de
+
+        di      
+        ld      (clearTileSP+1), sp
+
+        calculateRow    b
+
+        ld      a, d
+        cp      ID_BLANK
+        jr      z, blankTile
+
+        ld      a, b
+        and     %00000001
+        add     d
+
+        ld      l, a                    ; Tile ID
+        ld      h, 0
+        hlx     8
+        ld      de, _tile0
+        add     hl, de
+        jr      other
+
+blankTile:
+        ld      l, d                    ; Tile ID
+        ld      h, 0
+        hlx     8
+        ld      de, _tile0
+        add     hl, de
+
+other:
+        pop     de
+        ld      a, e
+        add     c
+        ld      e, a
+        ld      a, (hl)
+        ld      (de), a
+        inc     hl
+
+        pop     de
+        ld      a, e
+        add     c
+        ld      e, a
+        ld      a, (hl)
+        ld      (de), a
+        inc     hl
+
+        pop     de
+        ld      a, e
+        add     c
+        ld      e, a
+        ld      a, (hl)
+        ld      (de), a
+        inc     hl
+
+        pop     de
+        ld      a, e
+        add     c
+        ld      e, a
+        ld      a, (hl)
+        ld      (de), a
+        inc     hl
+
+        pop     de
+        ld      a, e
+        add     c
+        ld      e, a
+        ld      a, (hl)
+        ld      (de), a
+        inc     hl
+
+        pop     de
+        ld      a, e
+        add     c
+        ld      e, a
+        ld      a, (hl)
+        ld      (de), a
+        inc     hl
+
+        pop     de
+        ld      a, e
+        add     c
+        ld      e, a
+        ld      a, (hl)
+        ld      (de), a
+        inc     hl
+
+        pop     de
+        ld      a, e
+        add     c
+        ld      e, a
+        ld      a, (hl)
+        ld      (de), a
+        inc     hl
+
+clearTileSP:
+        ld      sp, -1
+        ei      
+        pop     de
+
+;        call    setTileAttr
+
+        pop     hl                      ; Restore coin table pointer
+notVisible4:
+        ld      a, SIZEOF_item
+        addhl   
+        jp      nextItem3
 
         ;
         ; Check if the player has collided with an item. And if so,
@@ -388,8 +502,8 @@ notVisible2:
         ;		de - Pointer to subroutine to call when collision is detected
         ;
 checkItemCollision:
-        ld      (updateScore), de
-nextEgg:
+        ld      (itemCollision+1), de
+nextItem:
         ld      a, (hl)
         cp      0xff
         ret     z
@@ -404,10 +518,7 @@ nextEgg:
         ; Collision check here
         ;
         ld      a, (hl)                 ; X byte position
-        rlca                            ; x2
-        rlca                            ; x4
-        rlca                            ; x8
-        and     %11111000
+
         add     2                       ; Left side pixel offset (indented a little)
         ld      b, a
         add     ITEM_WIDTH-5            ; Right side pixel offset (pulled in a little)
@@ -424,10 +535,7 @@ nextEgg:
 
         inc     hl
         ld      a, (hl)                 ; Y byte position
-        rlca                            ; x2
-        rlca                            ; x4
-        rlca                            ; x8
-        and     %11111000
+
         add     2                       ; Top pixel offset pulled in a little
         ld      b, a
         add     ITEM_HEIGHT-5           ; Bottom pixel offset, pushed up a little
@@ -442,28 +550,44 @@ nextEgg:
         jr      c, noCollision          ; 'c' if 'b' > 'a'
 
         ld      b, (hl)                 ; Y position
+        srl     b
+        srl     b
+        srl     b
         dec     hl                      ; Back to the flags
         ld      c, (hl)                 ; X position
-        dec     hl
-        xor     a                       ; Zero flags
-        ld      (hl), a
-
-        push    bc
-        call    clearAttr
-        pop     bc
-        call    clearChar
+        srl     c
+        srl     c
+        srl     c
+        dec     hl                      ; hl points to item flags
 
         ;
-        ; USer provided function to update score, etc.
+        ; User provided function to update score, etc.
         ;
-updateScore equ $+1
+itemCollision:
         call    -1
 noCollision:
         pop     hl
 notVisible3:
         ld      a, SIZEOF_item
         addhl   
-        jp      nextEgg
+        jp      nextItem
+
+		;
+		; Remove an item from the screen and change
+		; it's flags so that it is no longer visible.
+		;
+		;	Entry:
+		;		hl - Pointer to items flags
+		;		b  - Screen y character position
+		;		c  - screen x character position
+		;
+removeItem:
+        xor     a                       ; Zero flags
+        ld      (hl), a                 ; Save in item table
+        call    clearAttr               ; Remove the item and attribute
+        ld      a, ID_BLANK
+        call    displayTile
+        ret     
 
         section bss_user
         defvars 0                       ; Define the stack variables used
@@ -476,10 +600,6 @@ notVisible3:
         SIZEOF_vars 
         }       
 
-currentLevel:
-        dw      0
-currentItem:
-        dw      0
 currentItemTable:
         dw      0
 

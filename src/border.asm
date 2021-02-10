@@ -1,7 +1,7 @@
         public  _border
         section code_user
 
-        include "defs.asm"
+        include "defs.inc"
         ;
         ; Change the border color. On entry, l contains the color.
         ;

@@ -3,6 +3,7 @@
         extern  displayTile
         extern  decBCD
         extern  AFXPLAY
+        extern  removeItem
 
         public  eggTables
         public  eggs
@@ -12,13 +13,15 @@
         public  updateEggImage
         public  decrementEggs
 
-        include "defs.asm"
+        include "defs.inc"
 
         section code_user
         ;
         ; Increment and display the egg count
         ;
 eggCollision:
+        call    removeItem              ; Remove the item from the screen
+
         ld      l, 0x10
         ld      de, eggCount
         call    addBCD
@@ -83,7 +86,7 @@ currentEggTable:
         dw      0
 
 eggTables:
-        ds      MAX_LEVEL_X*MAX_LEVEL_Y*2
+        ds      MAX_LEVEL_X*MAX_LEVEL_Y*SIZEOF_ptr
 
 eggs:
-        ds      SIZEOF_item*8*MAX_LEVEL_X*MAX_LEVEL_Y
+        ds      SIZEOF_item*MAX_EGGS*MAX_LEVEL_X*MAX_LEVEL_Y

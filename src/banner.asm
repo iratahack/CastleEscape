@@ -5,7 +5,7 @@
         public  displayBanner
         public  bannerData
 
-        include "defs.asm"
+        include "defs.inc"
 
         section code_user
 
