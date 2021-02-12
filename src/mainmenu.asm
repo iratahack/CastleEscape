@@ -15,9 +15,14 @@
         extern  LOAD_SONG
         extern  PLAYER_OFF
         extern  afxEnable
+        extern  _lanternFlicker
+        extern  currentCoinTable
+        extern  _animateCoins
+        extern  bank7Screen
 
 
         public  mainMenu
+        public  rotateCount
 
         section code_user
 
@@ -29,11 +34,56 @@
 		; the game are on this screen.
 		;
 mainMenu:
+        ;
+        ; Start main menu song
+        ;
         LD      A, JINJ_MED
         CALL    LOAD_SONG
+
+        ;
+        ; Setup the coin table for the main menu
+        ;
+        ld      hl, coinTable
+        ld      (currentCoinTable), hl
+
+        ;
+        ; Patch the animate coins routine to access
+        ; memory @ 0xc000
+        ;
+        ld      hl, 0xf8cb              ; set 7, b
+        ld      (bank7Screen), hl
+
+        ;
+        ; Reset counter used for coin rotation
+        ;
+        xor     a
+        ld      (rotateCount), a
 displayScreen:
-        screen  1                       ; Display the main menu
+        ;
+        ; Point the ULA at screen 1
+        ;
+        screen  1
+
+        ;
+        ; Page in the memory bank with the main menu screen
+        ; to 0xc000
+        ;
+        bank    7
 getKey:
+        halt    
+
+        ld      hl, lanternList
+        call    _lanternFlicker
+
+        ld      hl, rotateCount
+        dec     (hl)
+        jp      p, noAnimate
+
+        ld      a, ROTATE_COUNT
+        ld      (hl), a
+        call    _animateCoins
+noAnimate:
+
         call    keyboardScan            ; Read the keyboard
         or      a                       ; If a key has been presses
         jr      nz, keyPressed          ; jump to process it.
@@ -62,6 +112,10 @@ opt2:
 IFDEF   ATTRIB_EDIT
         cp      '2'
         jr      nz, opt0
+		;
+		; Page bank 0 to 0xc000 since it has the attributes
+		;
+        bank    0
         ld      hl, _tileAttr
         push    hl
         ld      hl, _tile0
@@ -70,14 +124,14 @@ IFDEF   ATTRIB_EDIT
         call    _attribEdit
         pop     hl
         pop     hl
-        jr      displayScreen
+        jp      displayScreen
 ENDIF   
 opt0:
         cp      '0'
-        jr      nz, displayScreen
+        jp      nz, displayScreen
         call    PLAYER_OFF
         call    newGame
-        jr      mainMenu
+        jp      mainMenu
 
 displayBorder:
         ld      hl, bannerData
@@ -173,6 +227,34 @@ noop:
         pop     af
         ret     
 
+        section BSS_UNINITIALIZED
+
+        ;
+        ; Counter so coins are not rotated every frame
+        ;
+rotateCount:
+        ds      1
+
         section rodata_user
+
+        ;
+        ; List of lanterns on the main menu
+        ;
+lanternList:
+        db      4
+        dw      0x8000+SCREEN_ATTR_START+(7*32)+12
+        dw      0x8000+SCREEN_ATTR_START+(7*32)+13
+        dw      0x8000+SCREEN_ATTR_START+(7*32)+18
+        dw      0x8000+SCREEN_ATTR_START+(7*32)+19
+
+        ;
+        ; List of coins on the main menu
+        ; Specified by y/x pixel addresses
+        ;
+coinTable:
+        db      0x01, 0x16*8, 0x06*8, 0x00
+        db      0x01, 0x17*8, 0x06*8, 0x01
+        db      0x01, 0x18*8, 0x08*8, 0x02
+        db      0xff
 
 dummy:  db      "Press any key to return", 0x00

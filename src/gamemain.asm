@@ -34,19 +34,15 @@
         extern  heartTables
         extern  heartCount
         extern  hearts
-        extern  displayHeartCount
         extern  heartCollision
         extern  decrementEggs
         extern  _setupScreen
         extern  AFXINIT
         extern  AFXPLAY
-        extern  AFXFRAME
         extern  detectKempston
         extern  readKempston
         extern  kjScan
         extern  mainMenu
-        extern  print
-        extern  waitKey
         extern  spiderTables
         extern  spiders
         extern  spiderCollision
@@ -54,11 +50,10 @@
         extern  displayItems_pixel
         extern  updateSpiderPos
         extern  printAttr
-        extern  musicInit
         extern  PLAYER_INIT
-        extern  LOAD_SONG
-        extern  PLAYER_OFF
         extern  afxEnable
+        extern  bank7Screen
+        extern  titleScreen
 
         public  _currentTileMap
         public  _setCurrentTileMap
@@ -87,27 +82,7 @@
 _main:
         call    init
 
-        ld      bc, 0x1505
-        ld      hl, pressJumpMsg
-        ld      a, PAPER_BLACK|INK_WHITE|BRIGHT|FLASH
-        call    printAttr
-
-        LD      A, GOTHIC
-        CALL    LOAD_SONG
-
-waitJump:
-        call    _updateDirection
-        ld      a, e
-        or      a
-        jr      z, waitJump
-
-        call    PLAYER_OFF
-
-waitNoJump:
-        call    _updateDirection
-        ld      a, e
-        or      a
-        jr      nz, waitNoJump
+        call    titleScreen
 
         call    mainMenu
 		; Never reached
@@ -115,9 +90,15 @@ init:
         ld      l, INK_BLACK
         call    _border
 
+		;
+		; Initialize the WYZ Player
+		;
         call    PLAYER_INIT
 
-        ld      hl, afxBank             ; Effects bank address
+		;
+		; Initialize the afx player
+		;
+        ld      hl, afxBank
         call    AFXINIT
 
         ;
@@ -151,9 +132,21 @@ newGame:
         ld      a, 1
         ld      (afxEnable), a
 
+        ;
+        ; Patch the animate coins routine to access
+        ; the screen memory at 0x4000
+        ;
+        ld      hl, 0x0000              ; nop, nop
+        ld      (bank7Screen), hl
+
+        ;
+        ; Point the ULA at screen 0
+        ;
         screen  0
+
 		;
 		; Select bank 0 @ 0xc000
+		;
         bank    0
 
         ;
@@ -443,7 +436,7 @@ ENDIF
 
         ld      a, (ticks)
         and     %00000001
-        jr      z, noRotate
+        jr      z, noAnimate
 
 		; ######################################
 		;
@@ -462,13 +455,12 @@ IFDEF   TIMING_BORDER
 ENDIF   
         ld      hl, coinRotate
         dec     (hl)
-        jr      nz, noRotate
+        jp      p, noAnimate
 
-        ld      a, 3                    ; Reset rotate counter
+        ld      a, ROTATE_COUNT/2       ; Reset rotate counter
         ld      (hl), a
         call    _animateCoins
-
-noRotate:
+noAnimate:
 
 		; ######################################
 		;
@@ -635,7 +627,5 @@ afxBank:
         binary  "soundbank.afb"
 readyMsg:
         db      "Ready?", 0x00
-pressJumpMsg:
-        db      "Press Jump to Continue", 0x00
 gameOverMsg:
         db      " Game Over!:( ", 0x00

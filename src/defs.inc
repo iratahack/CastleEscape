@@ -15,6 +15,7 @@
         defc    START_X=40
         defc    START_Y=120
         defc    START_LIVES=0x03
+        defc    ROTATE_COUNT=6
 		DEFINE	ATTRIB_EDIT
 		DEFINE	TIMING_BORDER
 
@@ -23,7 +24,7 @@
             itemFlags   ds.b 1
             itemX       ds.b 1
             itemY       ds.b 1
-            imteFrame   ds.b 1
+            itemFrame   ds.b 1
         SIZEOF_item 
         }       
 

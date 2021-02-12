@@ -11,6 +11,7 @@
         public  coins
         public  currentCoinTable
         public  coinCollision
+        public  bank7Screen
 
         include "defs.inc"
 
@@ -53,6 +54,9 @@ nextCoin:
         pop     bc                      ; Pop y screen address
         add     c
         ld      c, a
+bank7Screen:                            ; Code is modified to set bit 7 of b
+        nop                             ; to write to 0xc000 addresses.
+        nop     
 
         ; Calculate the tile address using the animation index
         ld      a, (de)                 ; Animation index
