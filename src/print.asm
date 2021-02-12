@@ -1,49 +1,10 @@
         extern  _screenTab
-        extern  setAttr
 
         public  print
-        public  printAttr
 
         section code_user
 
-        include "defs.inc"
-
-
-		;
-		; Display a string with attributes.
-		;
-		;	Entry:
-		;		hl - Pointer to string
-		;		b  - Y screen start position
-		;		c  - X screen start position
-		;		a  - Screen attributes
-		;
-		;	Exit:
-		;		hl - Points to the memory location following the strings
-		;			 null terminator.
-		;		c  - Screen X position following the string
-		;
-printAttr:
-        push    af
-        push    de
-        ld      e, a
-L1b:
-        ld      a, (hl)
-        inc     hl
-        or      a
-        jr      z, L1f
-
-        call    printChar
-
-        ld      a, e
-        call    setAttr
-
-        inc     c
-        jr      L1b
-L1f:
-        pop     de
-        pop     af
-        ret     
+        include "defs.asm"
 
 		;
 		; Display a string.
@@ -60,17 +21,17 @@ L1f:
 		;
 print:
         push    af
-L2b:
+nextChar:
         ld      a, (hl)
         inc     hl
         or      a
-        jr      z, L2f
+        jr      z, done
 
         call    printChar
 
         inc     c
-        jr      L2b
-L2f:
+        jr      nextChar
+done:
         pop     af
         ret     
 
@@ -93,7 +54,6 @@ printChar:
         ld      sp, _screenTab
         add     hl, sp
         ld      sp, hl
-
         ld      a, c                    ; Get X offset
         pop     bc
         add     c                       ; Add it to the screen address

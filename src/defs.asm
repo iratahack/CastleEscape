@@ -1,16 +1,6 @@
         module  defs
 
         extern  _font_8x8_cpc_system
-        extern  currentBank
-
-		;
-		; Game Configuration
-		;
-        defc    START_X=40
-        defc    START_Y=120
-        defc    START_LIVES=0x03
-		DEFINE	ATTRIB_EDIT
-		DEFINE	TIMING_BORDER
 
         defvars 0
         {       
@@ -21,9 +11,10 @@
         SIZEOF_item 
         }       
 
-        defc    SIZEOF_int=0x02
         defc    SIZEOF_ptr=0x02
         defc    SIZEOF_byte=0x01
+
+        defc    START_LIVES=0x03
 
 		;
 		; AYFX Indexes
@@ -35,15 +26,6 @@
         defc    AYFX_COLLECT_HEART=4
         defc    AYFX_FALLING=5
         defc    AYFX_DIE=6
-
-		;
-		; Max items per level
-		;
-		defc	MAX_LANTERNS=8
-		defc	MAX_HEARTS=8
-		defc	MAX_EGGS=8
-		defc	MAX_COINS=8
-		defc	MAX_SPIDERS=4
 
         ;
         ; Tilemap definitions
@@ -89,7 +71,6 @@
         defc    ID_EGG=31
         defc    ID_EGG0=5*12
         defc    ID_HEART=34
-        defc	ID_SPIDER=4*12+3
 
 
         ;
@@ -157,6 +138,7 @@
         ; Bank select
         ;
 bank    MACRO   num
+        extern  currentBank
         push    af
         push    bc
         ld      bc, IO_BANK
@@ -317,33 +299,3 @@ modLoop:
         jp      p, modLoop
         add     a, val
         endm    
-
-		;
-		; Calculate screen row address
-		;
-calculateRow    MACRO   row
-        ld      l, row                  ; Get the screen y pixel position
-        ld      h, 0
-        add     hl, hl                  ; Multiply it by 2
-        ld      sp, _screenTab          ; and add it to the screen
-        add     hl, sp                  ; table address.
-        ld      sp, hl                  ; Save the result in sp.
-        ENDM
-
-		;
-		; Delay in increments of 1/50th of a second.
-		;
-		; Interrupts must be enabled!
-		;
-delay	MACRO	val
-		LOCAL	delayLoop
-		push	bc
-		ld		b, val
-delayLoop:
-		halt
-		djnz	delayLoop
-		pop		bc
-		ENDM
-
-
-

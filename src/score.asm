@@ -3,7 +3,7 @@
         public  _displayScore
         public  score
 
-        include "defs.inc"
+        include "defs.asm"
         section code_user
 
         ;

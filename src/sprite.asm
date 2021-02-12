@@ -5,9 +5,18 @@
         public  _displaySprite
         public  playerSprite
 
-        include "defs.inc"
+        include "defs.asm"
 
         section code_user
+
+calculateRow    MACRO   row
+        ld      l, row                  ; Get the screen y pixel position
+        ld      h, 0
+        add     hl, hl                  ; Multiply it by 2
+        ld      sp, _screenTab          ; and add it to the screen
+        add     hl, sp                  ; table address.
+        ld      sp, hl                  ; Save the result in sp.
+        ENDM    
 
 		;
 		; Entry:

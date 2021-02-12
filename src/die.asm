@@ -1,15 +1,10 @@
         extern  heartCount
         extern  subBCD
         extern  display2BCD
+        extern  _falling
         extern  gameOver
-        extern  AFXPLAY
-        extern  xyPos
-        extern  xyStartPos
-        extern  _jumping
 
         public  die
-
-        include "defs.inc"
 
         section code_user
 
@@ -31,11 +26,6 @@ die:
         ex      de, hl
         call    display2BCD
 
-        ld      a, AYFX_DIE
-        call    nc, AFXPLAY
-
-        delay   50
-
 		;
 		; If the heart count is zero, game over!
 		;
@@ -43,12 +33,11 @@ die:
         or      a
         jp      z, gameOver
 
-		; Set player X/Y position to where
-		; they entered the level.
-        ld      hl, (xyStartPos)
-        ld      (xyPos), hl
-        xor     a
-        ld      (_jumping), a
+        ld      a, 1
+        ld      (_falling), a
+
+
+
 
         pop     hl
         pop     de

@@ -14,7 +14,7 @@
         public  checkXCol
         public  checkYCol
 
-        include "defs.inc"
+        include "defs.asm"
         section code_user
 
         defc    ID_SOLID_TILE=144
@@ -287,6 +287,8 @@ landed:
         ;
         ld      a, (_falling)
         cp      FALL_DISTANCE
+        ld      a, AYFX_DIE
+        call    nc, AFXPLAY
         call    nc, die
 
         xor     a

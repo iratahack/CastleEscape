@@ -2,9 +2,10 @@
         public  _cls
         public  clearAttr
         public  setAttr
+        public  clearChar
         section code_user
 
-        include "defs.inc"
+        include "defs.asm"
 
         ;
         ; Clear the screen bitmap and attr data.
@@ -106,6 +107,37 @@ setAttr:
         ld      (hl), a
         pop     hl
         pop     bc
+        ret     
+
+        ;
+        ; Clear the character position specified by 'bc'
+        ;
+        ; Entry:
+        ;		b - Y location
+        ;		c - X location
+        ;
+        ; Corrupts:
+        ;		af, bc, hl
+        ;
+clearChar:
+        ld      l, b                    ; Multiply the Y offset
+        ld      h, 0                    ; by 16 to to use with
+        hlx     16                      ; screenTab
+
+        ld      de, _screenTab
+        add     hl, de
+        ld      a, (hl)                 ; Get low order screen address
+        add     c                       ; Add X offset
+        ld      e, a                    ; Store in 'e'
+        inc     hl                      ; Get high order screen address
+        ld      d, (hl)                 ; into 'd'
+        xor     a                       ; Clear 'a'
+        ld      b, 8                    ; Char height count
+clearCharLoop:
+        ld      (de), a
+        inc     d
+        djnz    clearCharLoop
+
         ret     
 
         section bss_user

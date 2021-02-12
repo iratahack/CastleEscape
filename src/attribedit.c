@@ -31,11 +31,11 @@ void setCursor(char x, char y)
 /*
  * Address of the ROM font.
  */
-const unsigned char * const font = (const unsigned char*) 0x3d00;
+const unsigned char *font = (const unsigned char*) 0x3d00;
 /*
  * Start of the screen attribute memory.
  */
-unsigned char * const attr = (unsigned char*) 0x5800;
+unsigned char *attr = (unsigned char*) 0x5800;
 
 /*
  * Display a character using the ROM font at the specified x,y character

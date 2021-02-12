@@ -3,11 +3,11 @@
         extern  _lanternList
         extern  displayTile
         extern  setTileAttr
-        extern  _tileAttr
 
         public  _displayScreen
+        public  _tileAttr
 
-        include "defs.inc"
+        include "defs.asm"
 
         section code_user
         ;
@@ -56,8 +56,6 @@ xloop:
         cmp     ID_EGG
         jr      z, nextTile
         cmp     ID_HEART
-        jr      z, nextTile
-        cmp     ID_SPIDER
         jr      z, nextTile
 
         ;
@@ -137,3 +135,7 @@ lanternPtr  equ $+1
             yPos        ds.b 1
         SIZEOF_vars 
         }       
+
+        section BANK_0
+_tileAttr:
+        binary  "attrib.dat"

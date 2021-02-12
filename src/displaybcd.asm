@@ -6,7 +6,7 @@
         public  decBCD
         public  display2BCD
 
-        include "defs.inc"
+        include "defs.asm"
         section code_user
 
         ; On entry:
