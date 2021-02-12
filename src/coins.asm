@@ -4,6 +4,7 @@
         extern  _displayScore
         extern  score
         extern  AFXPLAY
+        extern  removeItem
 
         public  _animateCoins
         public  _coinTables
@@ -11,7 +12,7 @@
         public  currentCoinTable
         public  coinCollision
 
-        include "defs.asm"
+        include "defs.inc"
 
         section code_user
 
@@ -32,6 +33,10 @@ nextCoin:
         inc     de
 
         ld      a, (de)                 ; Get x screen position
+        rrca    
+        rrca    
+        rrca    
+        and     %00011111
         ld      c, a                    ; Save for later
         inc     de
 
@@ -41,7 +46,7 @@ nextCoin:
         inc     de
         ld      a, c                    ; Restore x screen position
 
-        hlx     16
+        hlx     2
         ld      sp, _screenTab
         add     hl, sp
         ld      sp, hl
@@ -112,6 +117,8 @@ notVisible:
         ; Add 5 to the score and display it
         ;
 coinCollision:
+        call    removeItem              ; Remove the item from the screen
+
         ld      l, 0x05
         ld      de, score
         call    addBCD
@@ -126,7 +133,7 @@ currentCoinTable:
         dw      0
 
 _coinTables:
-        ds      MAX_LEVEL_X*MAX_LEVEL_Y*2
+        ds      MAX_LEVEL_X*MAX_LEVEL_Y*SIZEOF_ptr
 
 coins:
-        ds      SIZEOF_item*8*MAX_LEVEL_X*MAX_LEVEL_Y
+        ds      SIZEOF_item*MAX_COINS*MAX_LEVEL_X*MAX_LEVEL_Y

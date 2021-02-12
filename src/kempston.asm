@@ -1,7 +1,8 @@
         public  detectKempston
         public  readKempston
+        public  kjPresent
 
-        include "defs.asm"
+        include "defs.inc"
 
         section code_user
 		;
@@ -16,6 +17,7 @@ detectKempston:
         in      a, (IO_KEMPSTON)
         inc     a
         or      a
+        ld      (kjPresent), a
         ret     
 
 		;
@@ -31,3 +33,7 @@ readKempston:
         or      e
         ld      e, a
         ret     
+
+        section bss_user
+kjPresent:
+        db      0

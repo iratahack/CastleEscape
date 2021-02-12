@@ -1,11 +1,12 @@
         public  _keyboardScan
+        public  keyboardScan
         public  _updateDirection
         public  kjScan
         public  waitKey
 
         section code_user
 
-        include "defs.asm"
+        include "defs.inc"
 
 		;
 		; C Wrapper.
@@ -81,9 +82,11 @@ _updateDirection:
         ld      hl, scanCodes           ; Point to the scan codes
         ld      c, 0xfe                 ; Lower 8 bits of the IO port
         ld      e, 0                    ; Clear our return value
-        ld      d, 5                    ; Number of scan codes
 nextScanCode:
-        ld      b, (hl)                 ; Get IO port upper bits
+        ld      a, (hl)                 ; Get IO port upper bits
+        or      a                       ; Check for zero
+        jr      z, kjScan               ; Z if no more scancodes
+        ld      b, a                    ; Store port upper bits in 'b'
         inc     hl                      ; Point to key mask
         in      a, (c)                  ; Read port
         and     (hl)                    ; Logicaly and mask
@@ -94,8 +97,7 @@ nextScanCode:
         ld      e, a                    ; Save the return value
 notPressed:
         inc     hl                      ; Point to next key
-        dec     d                       ; Decrement scan code count
-        jr      nz, nextScanCode        ; Loop until we have checked all scan codes
+        jr      nextScanCode            ; Loop until we have checked all scan codes
 
 		;
 		; The 3 opcode below will be replaced with
@@ -137,11 +139,12 @@ waitKeyRelease:
 
         ; Port upper 8 bits, key mask, direction bit
 scanCodes:
-        db      0xfb, 0x01, UP
-        db      0xfd, 0x01, DOWN
-        db      0xdf, 0x02, LEFT
-        db      0xdf, 0x01, RIGHT
-        db      0x7f, 0x01, JUMP
+        db      0xdf, 0x02, LEFT        ; O
+        db      0xdf, 0x01, RIGHT       ; P
+        db      0x7f, 0x01, JUMP        ; SPACE
+        db      0x00
+;        db      0xfb, 0x01, UP         ; Q
+;        db      0xfd, 0x01, DOWN       ; A
 
         section rodata_user
 
@@ -152,5 +155,5 @@ Keyboard_Map:                           ;Bit 0,  1,  2,  3,  4
         db      0xF7, "1", "2", "3", "4", "5"
         db      0xEF, "0", "9", "8", "7", "6"
         db      0xDF, "P", "O", "I", "U", "Y"
-        db      0xBF, 10, "L", "K", "J", "H"
+        db      0xBF, 13, "L", "K", "J", "H"
         db      0x7F, " ", "#", "M", "N", "B"

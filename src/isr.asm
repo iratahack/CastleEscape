@@ -1,10 +1,13 @@
         extern  AFXFRAME
+        extern  afxEnable
+        extern  INTERR
+        extern  START_SONG
 
         public  _initISR
         public  ticks
         section code_user
 
-        include "defs.asm"
+        include "defs.inc"
         defc    VECTOR_TABLE_HIGH=0x80
         defc    VECTOR_TABLE=(VECTOR_TABLE_HIGH<<8)
         defc    JUMP_ADDR_BYTE=0x81
@@ -43,7 +46,13 @@ isr:
         push    hl
         push    ix
 
-        call    AFXFRAME
+        ld      a, (INTERR)
+        and     %00000010
+        call    nz, START_SONG
+
+        ld      a, (afxEnable)
+        or      a
+        call    nz, AFXFRAME
 
         ;
         ; Increment the 16-bit ticks count

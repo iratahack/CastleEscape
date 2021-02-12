@@ -20,54 +20,57 @@
 
         section code_driver
 
-        defc    ERR_SP=0x5c3d
+IF  1
+        defc    SV_BANKM=currentBank
+ELSE    
         include "target/zx/def/sysvar.def"
-        include "defs.asm"
+ENDIF   
+        include "defs.inc"
 
         public  _bankedtapeloader
 _bankedtapeloader:
         pushall 
         ld      ix, __BANK_0_head
         ld      de, __BANK_0_tail-__BANK_0_head
-        ld      c, 0x10                 ; Bank 0
+        ld      c, MEM_BANK_ROM|0x0     ; Bank 0
         call    load_block
         ret     c
         ld      ix, __BANK_1_head
         ld      de, __BANK_1_tail-__BANK_1_head
-        ld      c, 0x11                 ;Bank 1
+        ld      c, MEM_BANK_ROM|0x1     ;Bank 1
         call    load_block
         ret     c
         ld      ix, __BANK_2_head
         ld      de, __BANK_2_tail-__BANK_2_head
-        ld      c, 0x12                 ;Bank 2
+        ld      c, MEM_BANK_ROM|0x2     ;Bank 2
         call    load_block
         ret     c
         ld      ix, __BANK_3_head
         ld      de, __BANK_3_tail-__BANK_3_head
-        ld      c, 0x13                 ;Bank 3
+        ld      c, MEM_BANK_ROM|0x3     ;Bank 3
         call    load_block
         ret     c
         ld      ix, __BANK_4_head
         ld      de, __BANK_4_tail-__BANK_4_head
-        ld      c, 0x14                 ;Bank 4
+        ld      c, MEM_BANK_ROM|0x4     ;Bank 4
         call    load_block
         ret     c
         ld      ix, __BANK_5_head
         ld      de, __BANK_5_tail-__BANK_5_head
-        ld      c, 0x15                 ;Bank 5
+        ld      c, MEM_BANK_ROM|0x5     ;Bank 5
         call    load_block
         ret     c
         ld      ix, __BANK_6_head
         ld      de, __BANK_6_tail-__BANK_6_head
-        ld      c, 0x16                 ;Bank 6
+        ld      c, MEM_BANK_ROM|0x6     ;Bank 6
         call    load_block
         ret     c
         ld      ix, __BANK_7_head
         ld      de, __BANK_7_tail-__BANK_7_head
-        ld      c, 0x17                 ;Bank 7
+        ld      c, MEM_BANK_ROM|0x7     ;Bank 7
         call    load_block
         di      
-        ld      a, 0x10
+        ld      a, MEM_BANK_ROM
         ld      (SV_BANKM), a
         ld      bc, IO_BANK
         out     (c), a
@@ -85,18 +88,9 @@ load_block:
         ld      bc, IO_BANK
         out     (c), a
         ei      
-        ld      hl, (ERR_SP)
-        push    hl
-        ld      hl, load_block1
-        push    hl
-        ld      (ERR_SP), sp
         ld      a, 255                  ;Data block
         scf                             ;Load
         call    0x556                   ; call the tape loader in ROM
-load_block1:
-        pop     hl
-        pop     hl
-        ld      (ERR_SP), hl
         and     a
         ret     
 

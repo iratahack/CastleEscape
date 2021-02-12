@@ -9,13 +9,19 @@
         extern  _tileAttr
         extern  waitKey
         extern  newGame
+        extern  keyboardScan
+        extern  readKempston
+        extern  kjPresent
+        extern  LOAD_SONG
+        extern  PLAYER_OFF
+        extern  afxEnable
 
 
         public  mainMenu
 
         section code_user
 
-        include "defs.asm"
+        include "defs.inc"
 
         defc    BORDER_COLOR=INK_YELLOW
 		;
@@ -23,14 +29,37 @@
 		; the game are on this screen.
 		;
 mainMenu:
-        screen  1
-
+        LD      A, JINJ_MED
+        CALL    LOAD_SONG
+displayScreen:
+        screen  1                       ; Display the main menu
 getKey:
+        call    keyboardScan            ; Read the keyboard
+        or      a                       ; If a key has been presses
+        jr      nz, keyPressed          ; jump to process it.
+
+        ld      a, (kjPresent)          ; Check if the kempston joystick
+        or      a                       ; is present, if not
+        jr      z, getKey               ; continue polling.
+
+        ld      e, 0                    ; No direction keys pressed
+        call    readKempston            ; Read the joystick
+        ld      a, e                    ; Check if fire has been pressed
+        and     JUMP
+        jr      z, getKey               ; If not, continue polling
+
+        ld      a, '0'                  ; Force '0'
+        jr      opt0                    ; Jump to process action when '0' is pressed
+keyPressed:
         call    waitKey
 
         cp      '1'
-        call    z, noop
+        jr      nz, opt2
+        call    noop
+        jr      displayScreen
 
+opt2:
+IFDEF   ATTRIB_EDIT
         cp      '2'
         jr      nz, opt0
         ld      hl, _tileAttr
@@ -41,15 +70,14 @@ getKey:
         call    _attribEdit
         pop     hl
         pop     hl
-
+        jr      displayScreen
+ENDIF   
 opt0:
         cp      '0'
-        call    z, newGame
-
-        jp      mainMenu
-startGame:
-
-        ret     
+        jr      nz, displayScreen
+        call    PLAYER_OFF
+        call    newGame
+        jr      mainMenu
 
 displayBorder:
         ld      hl, bannerData
@@ -125,15 +153,12 @@ display:
 		; Dummy screen to be displayed when options are selected from main menu.
 		;
 noop:
+        push    af
 		;
-        ; Clear the screen and set the border color
+        ; Clear the screen
         ;
         ld      l, INK_WHITE|PAPER_BLACK
         call    _cls
-        ld      l, INK_BLACK
-        call    _border
-
-        halt    
 
         call    displayBorder
 
@@ -141,10 +166,11 @@ noop:
         ld      hl, dummy
         call    print
 
-        screen  0
+        screen  0                       ; Now it's setup switch to screen 0
 
-        call    waitKey
+        call    waitKey                 ; Do nothing.
 
+        pop     af
         ret     
 
         section rodata_user

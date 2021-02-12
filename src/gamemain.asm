@@ -44,9 +44,21 @@
         extern  detectKempston
         extern  readKempston
         extern  kjScan
-        extern  die
         extern  mainMenu
         extern  print
+        extern  waitKey
+        extern  spiderTables
+        extern  spiders
+        extern  spiderCollision
+        extern  currentSpiderTable
+        extern  displayItems_pixel
+        extern  updateSpiderPos
+        extern  printAttr
+        extern  musicInit
+        extern  PLAYER_INIT
+        extern  LOAD_SONG
+        extern  PLAYER_OFF
+        extern  afxEnable
 
         public  _currentTileMap
         public  _setCurrentTileMap
@@ -63,20 +75,47 @@
         public  _main
         public  newGame
         public  gameOver
+        public  xyPos
+        public  xyStartPos
 
-        include "defs.asm"
+        include "defs.inc"
 
-        defc    START_X=40
-        defc    START_Y=120
+        section BANK_5                  ; Set the base address of BANK_5
+        org     0x4000+0x1b00           ; Skip over the screen memory
 
         section code_user
 _main:
         call    init
+
+        ld      bc, 0x1505
+        ld      hl, pressJumpMsg
+        ld      a, PAPER_BLACK|INK_WHITE|BRIGHT|FLASH
+        call    printAttr
+
+        LD      A, GOTHIC
+        CALL    LOAD_SONG
+
+waitJump:
+        call    _updateDirection
+        ld      a, e
+        or      a
+        jr      z, waitJump
+
+        call    PLAYER_OFF
+
+waitNoJump:
+        call    _updateDirection
+        ld      a, e
+        or      a
+        jr      nz, waitNoJump
+
         call    mainMenu
 		; Never reached
 init:
         ld      l, INK_BLACK
         call    _border
+
+        call    PLAYER_INIT
 
         ld      hl, afxBank             ; Effects bank address
         call    AFXINIT
@@ -105,8 +144,12 @@ newGame:
         call    _cls
 
         ld      bc, 0x0b0c
-        ld      hl, ready
-        call    print
+        ld      hl, readyMsg
+        ld      a, PAPER_BLACK|INK_WHITE|BRIGHT
+        call    printAttr
+
+        ld      a, 1
+        ld      (afxEnable), a
 
         screen  0
 		;
@@ -133,6 +176,13 @@ newGame:
         ld      hl, heartTables
         ld      de, hearts
         ld      a, ID_HEART
+        call    _initItems
+        ;
+        ; Initialize the hearts tables
+        ;
+        ld      hl, spiderTables
+        ld      de, spiders
+        ld      a, ID_SPIDER
         call    _initItems
 
         ;
@@ -187,6 +237,16 @@ newGame:
         ld      bc, (_xPos)
         call    _copyScreen
 
+
+		;
+		; The game loop
+		;
+		; The game loop does the following basic operations.
+		; * Remove any moving items from the screen at their current position
+		; * Update user inputs
+		; * Update the position of any moving items
+		; * Re-draw any moving items at their new position
+		;
 gameLoop:
         ;
         ; Wait for refresh interrupt
@@ -202,8 +262,16 @@ lo:
         jr      nz, lo
 ENDIF   
 
+IFDEF   TIMING_BORDER
         ld      l, INK_BLUE
         call    _border
+ENDIF   
+
+		; ######################################
+		;
+		; Remove any moving items from the screen
+		;
+		; ######################################
 
         ;
         ; Re-draw the screen at the players current location
@@ -212,9 +280,32 @@ ENDIF
         ld      bc, (_xPos)
         call    _pasteScreen
 
+        ld      a, (ticks)
+        and     %00000001
+        jr      nz, oddFrame2
+
+		;
+		; The below code is only executed on even frame numbers
+		;
+
+		;
+		; Remove spiders
+		;
+        ld      a, ID_BLANK
+        ld      hl, (currentSpiderTable)
+        call    displayItems_pixel
+
+oddFrame2:
+
+		; ######################################
+		;
+		; Update user input
+		;
+		; ######################################
+IFDEF   TIMING_BORDER
         ld      l, INK_RED
         call    _border
-
+ENDIF   
         call    _updateDirection
 
         ;
@@ -290,31 +381,53 @@ notMidpoint:
         ld      (_jumping), a
 notJumping:
 
+		; ######################################
+		;
+		; Check if player is colliding with platforms
+		; in the Y direction.
+		;
+		; ######################################
+IFDEF   TIMING_BORDER
         ld      l, INK_MAGENTA
         call    _border
+ENDIF   
         call    checkYCol
 
-        ;
-        ; If player is moving left or right, check for collisions.
-        ;
+		; ######################################
+		;
+		; Check if player is colliding with platforms
+		; in the Y direction.
+		;
+		; ######################################
+IFDEF   TIMING_BORDER
         ld      l, INK_GREEN
         call    _border
+ENDIF   
         ld      a, (_xSpeed)            ; If xSpeed != 0 player is moving
         or      a                       ; left or right.
         call    nz, checkXCol           ; Check for a collision.
 
+		; ######################################
         ;
         ; Update the scrolling message
         ;
+		; ######################################
+IFDEF   TIMING_BORDER
         ld      l, INK_CYAN
         call    _border
+ENDIF   
         call    _scroll
 
+		; ######################################
         ;
-        ; Check for collisions with coins, eggs, and hearts
+        ; Check for collisions with coins, eggs,
+        ; hearts, and spiders, etc.
         ;
+		; ######################################
+IFDEF   TIMING_BORDER
         ld      l, INK_YELLOW
         call    _border
+ENDIF   
         ld      hl, (currentCoinTable)
         ld      de, coinCollision
         call    checkItemCollision
@@ -324,54 +437,115 @@ notJumping:
         ld      hl, (currentHeartTable)
         ld      de, heartCollision
         call    checkItemCollision
+        ld      hl, (currentSpiderTable)
+        ld      de, spiderCollision
+        call    checkItemCollision
 
+        ld      a, (ticks)
+        and     %00000001
+        jr      z, noRotate
+
+		; ######################################
+		;
+		; The below code is only executed on odd frame numbers
+		;
+		; ######################################
+
+		; ######################################
+		;
+		; Rotate any visible coins.
+		;
+		; ######################################
+IFDEF   TIMING_BORDER
         ld      l, INK_WHITE
         call    _border
-
+ENDIF   
         ld      hl, coinRotate
         dec     (hl)
         jr      nz, noRotate
 
-        ld      a, 6                    ; Reset rotate counter
+        ld      a, 3                    ; Reset rotate counter
         ld      (hl), a
         call    _animateCoins
 
 noRotate:
+
+		; ######################################
+		;
+		; Redraw any moving items.
+		;
+		; ######################################
+
+IFDEF   TIMING_BORDER
         ld      l, INK_BLUE
         call    _border
+ENDIF   
         ld      de, _spriteBuffer
         ld      bc, (_xPos)
         call    _copyScreen
 
+IFDEF   TIMING_BORDER
         ld      l, INK_RED
         call    _border
+ENDIF   
         ld      bc, (_xPos)
         call    _displaySprite
 
+        ld      a, (ticks)
+        and     %00000001
+        jr      nz, oddFrame
+
+		; ######################################
+		;
+		; The below code is only executed on even frame numbers
+		;
+		; ######################################
+        call    updateSpiderPos
+
+        ld      a, ID_SPIDER
+        ld      hl, (currentSpiderTable)
+        call    displayItems_pixel
         ;
         ; Flicker any lanterns on the screen
         ;
+IFDEF   TIMING_BORDER
         ld      l, INK_MAGENTA
         call    _border
+ENDIF   
         ld      hl, _lanternList
         call    _lanternFlicker
 
+oddFrame:
         ;
         ; See if the egg count needs to be decremented
         ;
+IFDEF   TIMING_BORDER
         ld      l, INK_GREEN
         call    _border
+ENDIF   
         call    decrementEggs
 
+IFDEF   TIMING_BORDER
         ld      l, INK_BLACK
         call    _border
-
+ENDIF   
         jp      gameLoop
 
 gameOver:
-        ld      sp, 0x0000
+        ld      sp, -1
+IFDEF   TIMING_BORDER
         ld      l, INK_BLACK
         call    _border
+ENDIF   
+        ld      bc, 0x0b0a
+        ld      hl, gameOverMsg
+        ld      a, PAPER_BLACK|INK_WHITE|BRIGHT
+        call    printAttr
+
+        delay   200
+
+        xor     a
+        ld      (afxEnable), a
         ret     
 
 _setCurrentTileMap:
@@ -435,6 +609,7 @@ _tileMapX:
         db      0
 _tileMapY:
         db      0
+xyPos:
 _xPos:
         db      0
 _yPos:
@@ -448,6 +623,8 @@ _jumping:
         db      0
 _falling:
         db      0
+xyStartPos:                             ; Position where player entered the level
+        ds      2
 _spriteBuffer:
         ds      48
 
@@ -456,5 +633,9 @@ currentBank:
         db      MEM_BANK_ROM
 afxBank:
         binary  "soundbank.afb"
-ready:
+readyMsg:
         db      "Ready?", 0x00
+pressJumpMsg:
+        db      "Press Jump to Continue", 0x00
+gameOverMsg:
+        db      " Game Over!:( ", 0x00

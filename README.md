@@ -4,7 +4,8 @@ A ZX Spectrum game written for [FUSE](https://en.wikipedia.org/wiki/Fuse_(emulat
 ## Credits
 * Coding - [Iratahack](mailto:iratahack@digitalxfer.com)
 * Graphics - Supported by [Carnivac](https://zxart.ee/eng/authors/c/carnivac/)
-* Sound - Curtesy of [ayfx_improved](https://github.com/Threetwosevensixseven/ayfxedit-improved)
+* Music - Borrowed from [WYZTracker](https://github.com/AugustoRuiz/WYZTracker)
+* Sound Effects - Created with [ayfx_improved](https://github.com/Threetwosevensixseven/ayfxedit-improved)
 * Levels - Designed with [Tiled](https://www.mapeditor.org/)
 
 ## Synopsis
@@ -28,4 +29,11 @@ Easy, run _make_ from the _src_ directory. The latest version of Z88DK must be i
 * run - build and run with fuse.exe which must be on the path
 
 ## Game Images
+The larger images include the ZX Spectrum border, smaller images do not.
+### Loading Screen
+![Title](assets/title.png)
+### Main Menu
 ![Main Menu](assets/mainmenu.png)
+### In-game Play
+![Level 1](assets/level1.png)
+![Level 2](assets/level2.png)

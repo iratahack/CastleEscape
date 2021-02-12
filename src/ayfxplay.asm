@@ -22,6 +22,7 @@
         public  AFXINIT
         public  AFXPLAY
         public  AFXFRAME
+        public  afxEnable
 
         ; channel descriptors, 4 bytes per channel:
         ; +0 (2) current address (channel is free if high byte = # 00)
@@ -31,7 +32,8 @@
 
 afxChDesc:
         DS      3*4
-
+afxEnable:
+        db      0
 
         section code_user
 
