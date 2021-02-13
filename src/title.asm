@@ -9,7 +9,7 @@
 
         public  titleScreen
 
-        section code_user
+        section BANK_5
         include "defs.inc"
 
 titleScreen:
@@ -55,7 +55,7 @@ noAnimate:
 
         call    _updateDirection
         ld      a, e
-        or      a
+        and     JUMP
         jr      z, waitJump
 
         call    PLAYER_OFF

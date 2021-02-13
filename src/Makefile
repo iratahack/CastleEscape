@@ -6,7 +6,13 @@ CRT=31
 RODATA=rodata_user
 PROJ_NAME=CastleEscape
 PRAGMA_FILE=zpragma.inc
-ASMDEPS=$(wildcard *.inc) $(wildcard *.scr) $(wildcard *.afb) $(wildcard *.dat)
+ASMDEPS=	\
+			$(wildcard *.inc) \
+			$(wildcard *.scr) \
+			$(wildcard *.afb) \
+			$(wildcard *.dat) \
+			$(wildcard music/*.mus) \
+			$(wildcard music/*.inc)
 
 C_OPT_FLAGS=-SO3
 
@@ -16,7 +22,6 @@ ASFLAGS=-I$(Z88DK)/lib
 
 OBJECTS =	$(patsubst %.c,%.o,$(wildcard *.c)) \
 			$(patsubst %.asm,%.o,$(wildcard *.asm)) \
-			tiles/tiles.o \
 			sprite/LeftSprite.o \
 			sprite/RightSprite.o
 
@@ -43,7 +48,7 @@ $(PROJ_NAME).tap : $(OBJECTS) $(PRAGMA_FILE) Makefile
 .PHONY: clean run dis
 
 clean:
-	rm -f *.[oi] *.tap *.bin *.map *.lis *.sym tiles/*.o sprite/*.o
+	rm -f *.[oi] *.tap *.bin *.map *.lis *.sym sprite/*.o
 
 run: all
 	fuse.exe $(PROJ_NAME).tap

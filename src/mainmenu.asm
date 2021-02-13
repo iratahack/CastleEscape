@@ -24,7 +24,7 @@
         public  mainMenu
         public  rotateCount
 
-        section code_user
+        section BANK_5
 
         include "defs.inc"
 

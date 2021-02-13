@@ -23,6 +23,7 @@
         public  AFXPLAY
         public  AFXFRAME
         public  afxEnable
+        public  AFXSTOP
 
         ; channel descriptors, 4 bytes per channel:
         ; +0 (2) current address (channel is free if high byte = # 00)
@@ -46,10 +47,10 @@ afxEnable:
 AFXINIT:
         inc     hl
         ld      (afxBnkAdr+1), hl       ; save the address of the offset table
-
+AFXSTOP:
         ld      hl, afxChDesc           ; mark all channels as empty
         ld      de, #00ff
-        ld      bc, #0cfd
+        ld      bc, #03fd				; Original value was 0cfd looks like a bug. Changed to 03fd
 afxInit0:
         ld      (hl), d
         inc     hl
@@ -138,7 +139,8 @@ afxFrame1:
         jr      c, afxFrame2            ; less than # 20, play on
         ld      h, a                    ; otherwise end of effect
         ld      b, #ff
-        ld      b, c                    ; in BC we enter the longest time
+		; Line below changed from ld b,c -> ld c,b
+        ld      c, b                    ; in BC we enter the longest time
         jr      afxFrame6
 
 afxFrame2:
